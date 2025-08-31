@@ -1,12 +1,58 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from 'react';
+import { useNotes } from '@/hooks/useNotes';
+import { NoteSidebar } from '@/components/NoteSidebar';
+import { NoteEditor } from '@/components/NoteEditor';
+import { Note } from '@/types/note';
+import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
+  const { notes, createNote, updateNote, deleteNote } = useNotes();
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+  const { toast } = useToast();
+
+  const handleCreateNote = () => {
+    const newNote = createNote();
+    setSelectedNote(newNote);
+    toast({
+      title: "Note created",
+      description: "Your new note is ready for editing.",
+    });
+  };
+
+  const handleDeleteNote = (id: string) => {
+    deleteNote(id);
+    if (selectedNote?.id === id) {
+      setSelectedNote(notes.length > 1 ? notes.find(n => n.id !== id) || null : null);
+    }
+    toast({
+      title: "Note deleted",
+      description: "Your note has been deleted.",
+      variant: "destructive",
+    });
+  };
+
+  const handleSelectNote = (note: Note) => {
+    setSelectedNote(note);
+  };
+
+  // Select first note by default if none selected and notes exist
+  if (!selectedNote && notes.length > 0) {
+    setSelectedNote(notes[0]);
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="h-screen flex bg-background">
+      <NoteSidebar
+        notes={notes}
+        selectedNote={selectedNote}
+        onSelectNote={handleSelectNote}
+        onCreateNote={handleCreateNote}
+        onDeleteNote={handleDeleteNote}
+      />
+      <NoteEditor
+        note={selectedNote}
+        onUpdateNote={updateNote}
+      />
     </div>
   );
 };
