@@ -11,6 +11,7 @@ export const useNotes = () => {
     if (savedNotes) {
       const parsedNotes = JSON.parse(savedNotes).map((note: any) => ({
         ...note,
+        language: note.language || 'plaintext',
         createdAt: new Date(note.createdAt),
         updatedAt: new Date(note.updatedAt),
       }));
@@ -21,6 +22,7 @@ export const useNotes = () => {
         id: '1',
         title: 'Welcome to Swift Notes',
         content: 'Start writing your thoughts here. This is a simple and elegant notes app where you can create, edit, and organize your notes.\n\nFeatures:\n• Clean, distraction-free writing\n• Auto-save functionality\n• Search through your notes\n• Elegant design\n\nClick the "+" button to create a new note!',
+        language: 'plaintext',
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -39,6 +41,7 @@ export const useNotes = () => {
       id: Date.now().toString(),
       title: 'Untitled Note',
       content: '',
+      language: 'plaintext',
       createdAt: new Date(),
       updatedAt: new Date(),
     };
