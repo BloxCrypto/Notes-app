@@ -4,6 +4,7 @@ import { Note } from '@/types/note';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { cn } from '@/lib/utils';
 
 interface NoteSidebarProps {
@@ -96,6 +97,7 @@ export const NoteSidebar = ({
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-semibold text-foreground">Notes</h1>
           <div className="flex items-center gap-1">
+            <ThemeToggle />
             <Button 
               onClick={handleImportClick}
               size="sm"
