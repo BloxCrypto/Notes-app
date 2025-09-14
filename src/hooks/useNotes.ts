@@ -64,10 +64,33 @@ export const useNotes = () => {
     saveNotes(updatedNotes);
   };
 
+  const exportNotes = () => {
+    const dataStr = JSON.stringify(notes, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `swift-notes-export-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const importNotes = (importedNotes: Note[]) => {
+    // Merge with existing notes, avoiding duplicates by ID
+    const existingIds = new Set(notes.map(note => note.id));
+    const newNotes = importedNotes.filter(note => !existingIds.has(note.id));
+    const updatedNotes = [...newNotes, ...notes];
+    saveNotes(updatedNotes);
+  };
+
   return {
     notes,
     createNote,
     updateNote,
     deleteNote,
+    exportNotes,
+    importNotes,
   };
 };

@@ -6,7 +6,7 @@ import { Note } from '@/types/note';
 import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
-  const { notes, createNote, updateNote, deleteNote } = useNotes();
+  const { notes, createNote, updateNote, deleteNote, exportNotes, importNotes } = useNotes();
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const { toast } = useToast();
 
@@ -35,6 +35,22 @@ const Index = () => {
     setSelectedNote(note);
   };
 
+  const handleExportNotes = () => {
+    exportNotes();
+    toast({
+      title: "Notes exported",
+      description: "Your notes have been downloaded as a JSON file.",
+    });
+  };
+
+  const handleImportNotes = (importedNotes: Note[]) => {
+    importNotes(importedNotes);
+    toast({
+      title: "Notes imported",
+      description: `Successfully imported ${importedNotes.length} notes.`,
+    });
+  };
+
   // Select first note by default if none selected and notes exist
   if (!selectedNote && notes.length > 0) {
     setSelectedNote(notes[0]);
@@ -48,6 +64,8 @@ const Index = () => {
         onSelectNote={handleSelectNote}
         onCreateNote={handleCreateNote}
         onDeleteNote={handleDeleteNote}
+        onExportNotes={handleExportNotes}
+        onImportNotes={handleImportNotes}
       />
       <NoteEditor
         note={selectedNote}

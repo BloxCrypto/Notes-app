@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Search, Plus, FileText, Trash2 } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Search, Plus, FileText, Trash2, Download, Upload } from 'lucide-react';
 import { Note } from '@/types/note';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,8 @@ interface NoteSidebarProps {
   onSelectNote: (note: Note) => void;
   onCreateNote: () => void;
   onDeleteNote: (id: string) => void;
+  onExportNotes: () => void;
+  onImportNotes: (notes: Note[]) => void;
 }
 
 export const NoteSidebar = ({
@@ -20,8 +22,47 @@ export const NoteSidebar = ({
   onSelectNote,
   onCreateNote,
   onDeleteNote,
+  onExportNotes,
+  onImportNotes,
 }: NoteSidebarProps) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const importedNotes = JSON.parse(content);
+        
+        // Validate the imported data
+        if (Array.isArray(importedNotes)) {
+          const validNotes = importedNotes.map((note: any) => ({
+            ...note,
+            id: note.id || Date.now().toString() + Math.random(),
+            createdAt: new Date(note.createdAt || Date.now()),
+            updatedAt: new Date(note.updatedAt || Date.now()),
+            language: note.language || 'plaintext',
+          }));
+          onImportNotes(validNotes);
+        }
+      } catch (error) {
+        console.error('Failed to import notes:', error);
+        alert('Failed to import notes. Please check the file format.');
+      }
+    };
+    reader.readAsText(file);
+    
+    // Reset the input
+    event.target.value = '';
+  };
 
   const filteredNotes = notes.filter(note =>
     note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -54,14 +95,42 @@ export const NoteSidebar = ({
       <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-semibold text-foreground">Notes</h1>
-          <Button 
-            onClick={onCreateNote}
-            size="sm"
-            className="h-8 w-8 p-0"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button 
+              onClick={handleImportClick}
+              size="sm"
+              variant="outline"
+              className="h-8 w-8 p-0"
+              title="Import notes"
+            >
+              <Upload className="h-4 w-4" />
+            </Button>
+            <Button 
+              onClick={onExportNotes}
+              size="sm"
+              variant="outline"
+              className="h-8 w-8 p-0"
+              title="Export notes"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+            <Button 
+              onClick={onCreateNote}
+              size="sm"
+              className="h-8 w-8 p-0"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
+        
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json"
+          onChange={handleFileChange}
+          style={{ display: 'none' }}
+        />
         
         {/* Search */}
         <div className="relative">
