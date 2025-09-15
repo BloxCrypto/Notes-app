@@ -1,14 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNotes } from '@/hooks/useNotes';
 import { NoteSidebar } from '@/components/NoteSidebar';
 import { NoteEditor } from '@/components/NoteEditor';
+import { MobileLayout } from '@/components/MobileLayout';
 import { Note } from '@/types/note';
 import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
   const { notes, createNote, updateNote, deleteNote, exportNotes, importNotes } = useNotes();
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const handleCreateNote = () => {
     const newNote = createNote();
@@ -56,7 +68,18 @@ const Index = () => {
     setSelectedNote(notes[0]);
   }
 
-  return (
+  return isMobile ? (
+    <MobileLayout
+      notes={notes}
+      selectedNote={selectedNote}
+      onSelectNote={handleSelectNote}
+      onCreateNote={handleCreateNote}
+      onDeleteNote={handleDeleteNote}
+      onExportNotes={handleExportNotes}
+      onImportNotes={handleImportNotes}
+      onUpdateNote={updateNote}
+    />
+  ) : (
     <div className="h-screen flex bg-background">
       <NoteSidebar
         notes={notes}

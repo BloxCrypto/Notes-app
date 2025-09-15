@@ -92,7 +92,7 @@ export const NoteSidebar = ({
   };
 
   return (
-    <div className="w-80 bg-muted/30 border-r border-border flex flex-col h-full">
+    <div className="w-80 lg:w-80 md:w-64 sm:w-full bg-muted/30 border-r border-border flex flex-col h-full">{" "}
       {/* Header */}
       <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between mb-4">
