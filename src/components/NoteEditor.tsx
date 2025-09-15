@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FileText, Check, Clock } from 'lucide-react';
 import Editor from '@monaco-editor/react';
+import * as monaco from 'monaco-editor';
 
 interface NoteEditorProps {
   note: Note | null;
@@ -29,6 +30,25 @@ const languages = [
   { value: 'rust', label: 'Rust' },
 ];
 
+// Common word suggestions for different contexts
+const commonWords = [
+  'function', 'component', 'interface', 'implement', 'because', 'therefore', 'however', 'although',
+  'application', 'development', 'programming', 'technology', 'solution', 'project', 'feature',
+  'requirement', 'specification', 'documentation', 'architecture', 'database', 'frontend',
+  'backend', 'algorithm', 'optimization', 'performance', 'security', 'authentication',
+  'authorization', 'configuration', 'deployment', 'environment', 'infrastructure', 'monitoring',
+  'debugging', 'testing', 'validation', 'integration', 'migration', 'refactoring', 'enhancement'
+];
+
+const contextualWords = {
+  javascript: ['const', 'let', 'var', 'function', 'arrow', 'async', 'await', 'promise', 'callback', 'closure', 'prototype', 'module', 'import', 'export'],
+  typescript: ['interface', 'type', 'generic', 'enum', 'namespace', 'decorator', 'readonly', 'optional', 'union', 'intersection'],
+  python: ['def', 'class', 'import', 'from', 'lambda', 'list', 'dict', 'tuple', 'set', 'comprehension', 'decorator', 'generator'],
+  html: ['element', 'attribute', 'semantic', 'accessibility', 'responsive', 'meta', 'DOCTYPE', 'viewport'],
+  css: ['selector', 'property', 'flexbox', 'grid', 'responsive', 'animation', 'transition', 'transform', 'pseudo'],
+  markdown: ['heading', 'emphasis', 'strong', 'italic', 'link', 'image', 'table', 'codeblock', 'blockquote']
+};
+
 export const NoteEditor = ({ note, onUpdateNote }: NoteEditorProps) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -37,6 +57,72 @@ export const NoteEditor = ({ note, onUpdateNote }: NoteEditorProps) => {
   
   const titleSaveTimeoutRef = useRef<NodeJS.Timeout>();
   const contentSaveTimeoutRef = useRef<NodeJS.Timeout>();
+  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor>();
+
+  // Setup word suggestions and autocomplete
+  const setupWordSuggestions = useCallback((editor: monaco.editor.IStandaloneCodeEditor) => {
+    editorRef.current = editor;
+    
+    // Register completion provider for all languages
+    const disposable = monaco.languages.registerCompletionItemProvider('*', {
+      provideCompletionItems: (model, position) => {
+        const word = model.getWordUntilPosition(position);
+        const range = {
+          startLineNumber: position.lineNumber,
+          endLineNumber: position.lineNumber,
+          startColumn: word.startColumn,
+          endColumn: word.endColumn
+        };
+
+        // Get context-specific words
+        const currentLanguage = model.getLanguageId();
+        const languageWords = contextualWords[currentLanguage as keyof typeof contextualWords] || [];
+        
+        // Extract words from current content for personalized suggestions
+        const contentWords = content
+          .split(/\W+/)
+          .filter(word => word.length > 3 && !commonWords.includes(word.toLowerCase()))
+          .slice(0, 20); // Limit to recent words
+
+        // Combine all suggestions
+        const allSuggestions = [
+          ...commonWords,
+          ...languageWords,
+          ...contentWords
+        ];
+
+        const suggestions = allSuggestions
+          .filter(suggestion => suggestion.toLowerCase().includes(word.word.toLowerCase()))
+          .slice(0, 15) // Limit suggestions
+          .map(suggestion => ({
+            label: suggestion,
+            kind: monaco.languages.CompletionItemKind.Text,
+            insertText: suggestion,
+            range: range,
+            sortText: suggestion.startsWith(word.word) ? '0' + suggestion : '1' + suggestion
+          }));
+
+        return { suggestions };
+      }
+    });
+
+    // Cleanup function
+    return () => disposable.dispose();
+  }, [content]);
+
+  const handleEditorDidMount = (editor: monaco.editor.IStandaloneCodeEditor) => {
+    setupWordSuggestions(editor);
+    
+    // Enable additional editor features
+    editor.addAction({
+      id: 'trigger-suggest',
+      label: 'Trigger Suggest',
+      keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Space],
+      run: () => {
+        editor.trigger('keyboard', 'editor.action.triggerSuggest', {});
+      }
+    });
+  };
 
   useEffect(() => {
     if (note) {
@@ -151,6 +237,7 @@ export const NoteEditor = ({ note, onUpdateNote }: NoteEditorProps) => {
           language={language}
           value={content}
           onChange={handleContentChange}
+          onMount={handleEditorDidMount}
           theme="vs-dark"
           options={{
             minimap: { enabled: false },
@@ -161,6 +248,22 @@ export const NoteEditor = ({ note, onUpdateNote }: NoteEditorProps) => {
             automaticLayout: true,
             wordWrap: 'on',
             padding: { top: 20, bottom: 20 },
+            // Enhanced autocomplete settings
+            quickSuggestions: {
+              other: true,
+              comments: true,
+              strings: true
+            },
+            parameterHints: { enabled: true },
+            autoClosingBrackets: 'always',
+            autoClosingQuotes: 'always',
+            suggestOnTriggerCharacters: true,
+            acceptSuggestionOnEnter: 'on',
+            tabCompletion: 'on',
+            wordBasedSuggestions: 'allDocuments',
+            // Show suggestions automatically
+            suggestSelection: 'first',
+            quickSuggestionsDelay: 100
           }}
         />
       </div>
