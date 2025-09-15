@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Note } from '@/types/note';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileText, Check, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { FileText, Check, Clock, Search, X } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 
@@ -54,6 +55,8 @@ export const NoteEditor = ({ note, onUpdateNote }: NoteEditorProps) => {
   const [content, setContent] = useState('');
   const [language, setLanguage] = useState('plaintext');
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'idle'>('saved');
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   
   const titleSaveTimeoutRef = useRef<NodeJS.Timeout>();
   const contentSaveTimeoutRef = useRef<NodeJS.Timeout>();
@@ -122,6 +125,50 @@ export const NoteEditor = ({ note, onUpdateNote }: NoteEditorProps) => {
         editor.trigger('keyboard', 'editor.action.triggerSuggest', {});
       }
     });
+
+    // Add search functionality
+    editor.addAction({
+      id: 'find-in-editor',
+      label: 'Find',
+      keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF],
+      run: () => {
+        setShowSearch(true);
+      }
+    });
+  };
+
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    if (editorRef.current && term) {
+      const model = editorRef.current.getModel();
+      if (model) {
+        const matches = model.findMatches(term, false, false, true, null, true);
+        if (matches.length > 0) {
+          editorRef.current.setSelection(matches[0].range);
+          editorRef.current.revealLineInCenter(matches[0].range.startLineNumber);
+        }
+      }
+    }
+  };
+
+  const handleFindNext = () => {
+    if (editorRef.current && searchTerm) {
+      editorRef.current.trigger('keyboard', 'editor.action.nextMatchFindAction', {});
+    }
+  };
+
+  const handleFindPrevious = () => {
+    if (editorRef.current && searchTerm) {
+      editorRef.current.trigger('keyboard', 'editor.action.previousMatchFindAction', {});
+    }
+  };
+
+  const closeSearch = () => {
+    setShowSearch(false);
+    setSearchTerm('');
+    if (editorRef.current) {
+      editorRef.current.trigger('keyboard', 'closeFindWidget', {});
+    }
   };
 
   useEffect(() => {
@@ -229,6 +276,47 @@ export const NoteEditor = ({ note, onUpdateNote }: NoteEditorProps) => {
             </SelectContent>
           </Select>
         </div>
+        
+        {showSearch && (
+          <div className="mt-4 p-3 bg-muted/50 rounded-lg border border-border">
+            <div className="flex items-center gap-2">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search in note..."
+                value={searchTerm}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="flex-1 h-8"
+                autoFocus
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleFindPrevious}
+                disabled={!searchTerm}
+                className="h-8 w-8 p-0"
+              >
+                ↑
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleFindNext}
+                disabled={!searchTerm}
+                className="h-8 w-8 p-0"
+              >
+                ↓
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={closeSearch}
+                className="h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
       
       <div className="flex-1">
