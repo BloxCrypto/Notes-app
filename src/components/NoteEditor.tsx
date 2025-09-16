@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { FileText, Check, Clock, Search, X } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
+import { TypewriterText } from './TypewriterText';
 
 interface NoteEditorProps {
   note: Note | null;
@@ -222,10 +223,21 @@ export const NoteEditor = ({ note, onUpdateNote }: NoteEditorProps) => {
   if (!note) {
     return (
       <div className="flex-1 flex items-center justify-center bg-background">
-        <div className="text-center">
+        <div className="text-center animate-fade-in">
           <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
-          <h2 className="text-xl font-semibold text-foreground mb-2">Select a note to edit</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-xl font-semibold text-foreground mb-2">
+            <TypewriterText 
+              texts={[
+                "Select a note to edit",
+                "Start writing your thoughts",
+                "Create something amazing"
+              ]}
+              speed={80}
+              deleteSpeed={40}
+              delay={1500}
+            />
+          </h2>
+          <p className="text-muted-foreground mt-4">
             Choose a note from the sidebar or create a new one to get started.
           </p>
         </div>
