@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Menu, ArrowLeft } from 'lucide-react';
 import { Note } from '@/types/note';
 import { NoteSidebar } from './NoteSidebar';
@@ -45,6 +45,13 @@ export const MobileLayout = ({
     setShowEditor(true);
     setSidebarOpen(false);
   };
+
+  // Auto-show editor when a note is selected
+  useEffect(() => {
+    if (selectedNote && window.innerWidth < 1024) {
+      setShowEditor(true);
+    }
+  }, [selectedNote]);
 
   return (
     <div className="h-screen flex flex-col bg-background">
